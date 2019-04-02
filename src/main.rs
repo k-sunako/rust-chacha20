@@ -1,3 +1,4 @@
+use std::mem;
 use std::u32;
 
 // 2.1.  The ChaCha Quarter Round
@@ -146,19 +147,27 @@ fn setup_key(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
     //    reading the bytes in little-endian order, in 4-byte chunks.
     for i in 0..8 {
         let idx_state = i + 4;
-        let idx_str_key = 4 * i;
+        let idx_key = 4 * i;
 
+        /*
         let mut x = 0;
-        x |= u32::from(key[idx_str_key + 3]);
+        x |= u32::from(key[idx_key + 3]);
         x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_key + 2]);
+        x |= u32::from(key[idx_key + 2]);
         x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_key + 1]);
+        x |= u32::from(key[idx_key + 1]);
         x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_key]);
+        x |= u32::from(key[idx_key]);
         x = x.wrapping_shl(8);
-
-        state[idx_state] = x;
+         */
+        unsafe {
+            state[idx_state] = mem::transmute::<[u8; 4], u32>([
+                key[idx_key],
+                key[idx_key + 1],
+                key[idx_key + 2],
+                key[idx_key + 3],
+            ]);
+        }
     }
 
     // o  Word 12 is a block counter.  Since each block is 64-byte, a 32-bit
@@ -171,8 +180,8 @@ fn setup_key(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
     //    bits.
     for i in 0..3 {
         let idx_state = 13 + i;
-        let idx_str_nonce = 4 * i;
-
+        let idx_nonce = 4 * i;
+        /*
         let mut x = 0;
         x |= u32::from(key[idx_str_nonce + 3]);
         x = x.wrapping_shl(8);
@@ -182,8 +191,15 @@ fn setup_key(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
         x = x.wrapping_shl(8);
         x |= u32::from(key[idx_str_nonce]);
         x = x.wrapping_shl(8);
-
-        state[idx_state] = x;
+         */
+        unsafe {
+            state[idx_state] = mem::transmute::<[u8; 4], u32>([
+                nonce[idx_nonce],
+                nonce[idx_nonce + 1],
+                nonce[idx_nonce + 2],
+                nonce[idx_nonce + 3],
+            ]);
+        }
     }
 
     state
