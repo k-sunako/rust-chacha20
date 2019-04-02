@@ -290,18 +290,22 @@ fn block_function(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
         state[i] = state[i].overflowing_add(working_state[i]).0;
     }
 
-    let mut serialized: Vec<u8> = vec![0; state.len() * 4];
-    for i in 0..16 {
-        let x = working_state[i];
+    state
+}
 
-        serialized[4 * i] = (0x0000_00ff & x) as u8;
-        serialized[4 * i + 1] = (0x0000_00ff & x.wrapping_shr(8)) as u8;
-        serialized[4 * i + 2] = (0x0000_00ff & x.wrapping_shr(16)) as u8;
-        serialized[4 * i + 3] = (0x0000_00ff & x.wrapping_shr(24)) as u8;
+fn serialized(arr32: Vec<u32>) -> Vec<u8> {
+    let mut serialized: Vec<u8> = vec![0; arr32.len() * 4];
+    for i in 0..16 {
+        unsafe {
+            let arr8 = mem::transmute::<u32, [u8; 4]>(arr32[i]);
+            serialized[i * 4] = arr8[0];
+            serialized[i * 4 + 1] = arr8[1];
+            serialized[i * 4 + 2] = arr8[2];
+            serialized[i * 4 + 3] = arr8[3];
+        }
     }
 
-    //serialized
-    state
+    serialized
 }
 
 #[test]
@@ -360,6 +364,7 @@ fn test_block_function() {
     ];
 
     assert_eq!(actual, expected_at_the_end);
+    assert_eq!(serialized(actual), expected);
 }
 
 fn main() {
