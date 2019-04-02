@@ -272,65 +272,7 @@ fn test_setup_key() {
 fn block_function(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
     // The ChaCha20 state is initialized as follows:
 
-    let mut state: Vec<u32> = vec![0; 16];
-
-    // o  The first four words (0-3) are constants: 0x61707865, 0x3320646e,
-    //    0x79622d32, 0x6b206574.
-    state[0] = 0x6170_7865;
-    state[1] = 0x3320_646e;
-    state[2] = 0x7962_2d32;
-    state[3] = 0x6b20_6574;
-
-    // o  The next eight words (4-11) are taken from the 256-bit key by
-    //    reading the bytes in little-endian order, in 4-byte chunks.
-    for i in 0..8 {
-        let idx_state = i + 4;
-        let idx_str_key = 4 * i;
-
-        let mut x = 0;
-        x |= u32::from(key[idx_str_key + 3]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_key + 2]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_key + 1]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_key]);
-        x = x.wrapping_shl(8);
-
-        state[idx_state] = x;
-    }
-
-    // o  Word 12 is a block counter.  Since each block is 64-byte, a 32-bit
-    //    word is enough for 256 gigabytes of data.
-    state[12] = counter;
-
-    // o  Words 13-15 are a nonce, which should not be repeated for the same
-    //    key.  The 13th word is the first 32 bits of the input nonce taken
-    //    as a little-endian integer, while the 15th word is the last 32
-    //    bits.
-    for i in 0..3 {
-        let idx_state = 13 + i;
-        let idx_str_nonce = 4 * i;
-
-        let mut x = 0;
-        x |= u32::from(key[idx_str_nonce + 3]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_nonce + 2]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_nonce + 1]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_nonce]);
-        x = x.wrapping_shl(8);
-
-        state[idx_state] = x;
-    }
-
-    //     cccccccc  cccccccc  cccccccc  cccccccc
-    //     kkkkkkkk  kkkkkkkk  kkkkkkkk  kkkkkkkk
-    //     kkkkkkkk  kkkkkkkk  kkkkkkkk  kkkkkkkk
-    //     bbbbbbbb  nnnnnnnn  nnnnnnnn  nnnnnnnn
-
-    // c=constant k=key b=blockcount n=nonce
+    let mut state = setup_key(key, counter, nonce);
 
     let mut working_state = state.clone();
     for _ in 1..=10 {
