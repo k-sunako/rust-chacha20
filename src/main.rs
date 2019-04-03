@@ -367,6 +367,38 @@ fn test_block_function() {
     assert_eq!(serialized(actual), expected);
 }
 
+fn chacha20_encrypt(key: Vec<u8>, counter: u32, nonce: Vec<u8>, plaintext: Vec<u8>) -> Vec<u8> {
+    let mut encrypted_message = vec![0; plaintext.len()];
+
+    for j in 0..(plaintext.len() / 64) {
+        let key_stream = serialized(block_function(
+            key.clone(),
+            counter + j as u32,
+            nonce.clone(),
+        ));
+        let block = &plaintext[j * 64..=(j * 64 + 63)];
+
+        for k in 0..64 {
+            encrypted_message[j * 64 + k] = block[k] ^ key_stream[k];
+        }
+    }
+    if plaintext.len() % 64 != 1 {
+        let j = plaintext.len() / 64;
+        let key_stream = serialized(block_function(
+            key.clone(),
+            counter + j as u32,
+            nonce.clone(),
+        ));
+        let block = &plaintext[j * 64..plaintext.len()];
+
+        for k in 0..plaintext.len() % 64 {
+            encrypted_message[j * 64 + k] = block[k] ^ key_stream[k];
+        }
+    }
+
+    encrypted_message
+}
+
 fn main() {
     println!("Hello, world!");
 }
