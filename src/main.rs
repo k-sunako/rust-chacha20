@@ -1,5 +1,4 @@
 use std::mem;
-use std::u32;
 
 // 2.1.  The ChaCha Quarter Round
 
@@ -149,17 +148,6 @@ fn setup_key(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
         let idx_state = i + 4;
         let idx_key = 4 * i;
 
-        /*
-        let mut x = 0;
-        x |= u32::from(key[idx_key + 3]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_key + 2]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_key + 1]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_key]);
-        x = x.wrapping_shl(8);
-         */
         unsafe {
             state[idx_state] = mem::transmute::<[u8; 4], u32>([
                 key[idx_key],
@@ -181,17 +169,7 @@ fn setup_key(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
     for i in 0..3 {
         let idx_state = 13 + i;
         let idx_nonce = 4 * i;
-        /*
-        let mut x = 0;
-        x |= u32::from(key[idx_str_nonce + 3]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_nonce + 2]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_nonce + 1]);
-        x = x.wrapping_shl(8);
-        x |= u32::from(key[idx_str_nonce]);
-        x = x.wrapping_shl(8);
-         */
+
         unsafe {
             state[idx_state] = mem::transmute::<[u8; 4], u32>([
                 nonce[idx_nonce],
@@ -462,17 +440,16 @@ fn test_chacha20_encrypt() {
 
 #[test]
 fn test_generate_rng() {
-    let mut seed: Vec<u8> = vec![
+    let seed: Vec<u8> = vec![
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
         0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d,
         0x1e, 0x1f,
     ];
 
-    let mut nonce: Vec<u8> = vec![
+    let nonce: Vec<u8> = vec![
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ];
 
-    // 40
     let expected: Vec<u32> = vec![
         2100034873, 1780073945, 1996733837, 1229642936, 1876440458, 3429555900, 1283312818,
         2451892952, 3888915243, 2871222434, 1777274431, 1686095930, 3929375269, 765720497,
@@ -491,10 +468,4 @@ fn test_generate_rng() {
     for i in 0..16 {
         assert_eq!(expected[i + 16], r[i]);
     }
-    
-
-}
-
-fn main() {
-    println!("Hello, world!");
 }
