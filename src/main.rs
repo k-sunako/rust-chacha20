@@ -26,6 +26,23 @@ fn quarter_round(mut a: u32, mut b: u32, mut c: u32, mut d: u32) -> (u32, u32, u
     (a, b, c, d)
 }
 
+macro_rules! macro_quarter_round {
+    ($a: expr, $b: expr, $c: expr, $d: expr) => {{
+        $a = $a.overflowing_add($b).0;
+        $d ^= $a;
+        $d = $d.rotate_left(16);
+        $c = $c.overflowing_add($d).0;
+        $b ^= $c;
+        $b = $b.rotate_left(12);
+        $a = $a.overflowing_add($b).0;
+        $d ^= $a;
+        $d = $d.rotate_left(8);
+        $c = $c.overflowing_add($d).0;
+        $b ^= $c;
+        $b = $b.rotate_left(7);
+    }};
+}
+
 // 2.1.1.  Test Vector for the ChaCha Quarter Round
 
 //    For a test vector, we will use the same numbers as in the example,
@@ -49,6 +66,13 @@ fn test_quarter_round() {
         quarter_round(0x11111111, 0x01020304, 0x9b8d6f43, 0x01234567),
         (0xea2a92f4, 0xcb1cf8ce, 0x4581472e, 0x5881c4bb)
     );
+
+    let mut a: u32 = 0x11111111;
+    let mut b: u32 = 0x01020304;
+    let mut c: u32 = 0x9b8d6f43;
+    let mut d: u32 = 0x01234567;
+    macro_quarter_round!(a, b, c, d);
+    assert_eq!(0xea2a92f4, a);
 }
 
 // 2.2.  A Quarter Round on the ChaCha State
@@ -129,6 +153,27 @@ fn test_apply_quarter_round() {
 
     assert_eq!(output, actual);
 }
+
+#[test]
+fn test_apply_quarter_round_2() {
+    let mut input: Vec<u32> = vec![
+        0x879531e0, 0xc5ecf37d, 0x516461b1, 0xc9a62f8a, 0x44c20ef3, 0x3390af7f, 0xd9fc690b,
+        0x2a5f714c, 0x53372767, 0xb00a5631, 0x974c541a, 0x359e9963, 0x5c971061, 0x3d631689,
+        0x2098d9d6, 0x91dbd320,
+    ];
+
+    let output: Vec<u32> = vec![
+        0x879531e0, 0xc5ecf37d, 0xbdb886dc, 0xc9a62f8a, 0x44c20ef3, 0x3390af7f, 0xd9fc690b,
+        0xcfacafd2, 0xe46bea80, 0xb00a5631, 0x974c541a, 0x359e9963, 0x5c971061, 0xccc07c79,
+        0x2098d9d6, 0x91dbd320,
+    ];
+
+    //let actual = apply_quarter_round(2, 7, 8, 13, input);
+    macro_quarter_round!(input[2], input[7], input[8], input[13]);
+
+    assert_eq!(output, input);
+}
+
 
 fn setup_key(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
     // The ChaCha20 state is initialized as follows:
