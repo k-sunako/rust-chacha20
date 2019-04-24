@@ -73,6 +73,7 @@ fn test_quarter_round() {
     let mut d: u32 = 0x01234567;
     macro_quarter_round!(a, b, c, d);
     assert_eq!(0xea2a92f4, a);
+    assert_eq!(0xcb1cf8ce, b);
 }
 
 // 2.2.  A Quarter Round on the ChaCha State
@@ -173,7 +174,6 @@ fn test_apply_quarter_round_2() {
 
     assert_eq!(output, input);
 }
-
 
 fn setup_key(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
     // The ChaCha20 state is initialized as follows:
@@ -297,20 +297,20 @@ fn block_function(key: Vec<u8>, counter: u32, nonce: Vec<u8>) -> Vec<u32> {
 
     let mut state = setup_key(key, counter, nonce);
 
-    let mut working_state = state.clone();
+    let mut x = state.clone();
     for _ in 1..=10 {
-        working_state = apply_quarter_round(0, 4, 8, 12, working_state);
-        working_state = apply_quarter_round(1, 5, 9, 13, working_state);
-        working_state = apply_quarter_round(2, 6, 10, 14, working_state);
-        working_state = apply_quarter_round(3, 7, 11, 15, working_state);
-        working_state = apply_quarter_round(0, 5, 10, 15, working_state);
-        working_state = apply_quarter_round(1, 6, 11, 12, working_state);
-        working_state = apply_quarter_round(2, 7, 8, 13, working_state);
-        working_state = apply_quarter_round(3, 4, 9, 14, working_state);
+        macro_quarter_round!(x[0], x[4], x[8], x[12]);
+        macro_quarter_round!(x[1], x[5], x[9], x[13]);
+        macro_quarter_round!(x[2], x[6], x[10], x[14]);
+        macro_quarter_round!(x[3], x[7], x[11], x[15]);
+        macro_quarter_round!(x[0], x[5], x[10], x[15]);
+        macro_quarter_round!(x[1], x[6], x[11], x[12]);
+        macro_quarter_round!(x[2], x[7], x[8], x[13]);
+        macro_quarter_round!(x[3], x[4], x[9], x[14]);
     }
 
     for i in 0..16 {
-        state[i] = state[i].overflowing_add(working_state[i]).0;
+        state[i] = state[i].overflowing_add(x[i]).0;
     }
 
     state
